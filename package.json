@@ -7,14 +7,15 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tslint --project . && tsc && npm start",
     "dev": "tsc && npm start",
-	"install": "tsc",
+    "install": "tsc",
     "start": "node build/main.js",
-    "watch": "nodemon -e ts -w src --exec 'npm run dev'"
+    "watch": "nodemon -L -e ts -w src --exec 'npm run dev'"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/graphql": "^0.12.1",
+    "@types/jsonwebtoken": "^7.2.5",
     "@types/node": "^9.3.0",
     "@types/zeromq": "^4.5.3",
     "graphql": "^0.12.3",
@@ -26,6 +27,7 @@
   },
   "dependencies": {
     "graphql": "^0.12.3",
+    "jsonwebtoken": "^8.1.1",
     "uuid": "^3.2.1",
     "zeromq": "^4.6.0"
   }
