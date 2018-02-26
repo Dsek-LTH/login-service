@@ -29,8 +29,14 @@ export class Service {
   }
 
   private async onRequest(q: Buffer) {
-    const query = q.toString("utf-8");
-    const result = await graphql(schema, query, this.root);
+    const operation = JSON.parse(q.toString("utf-8"));
+    const result = await graphql({
+      schema,
+      source: operation.query,
+      variableValues: operation.variables,
+      contextValue: operation.context,
+      rootValue: this.root,
+    });
     this.socket.send(JSON.stringify(result));
   }
 
