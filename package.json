@@ -5,7 +5,7 @@
   "main": "build/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tslint --project . && tsc && npm start",
+    "build": "tslint --project . && tsc",
     "dev": "tsc && npm start",
     "install": "tsc",
     "start": "node build/main.js",
@@ -20,12 +20,16 @@
     "@types/zeromq": "^4.5.3",
     "graphql": "^0.12.3",
     "nodemon": "^1.14.11",
-    "source-map-support": "^0.5.1",
+    "source-map-support": "^0.5.10",
     "tslint": "^5.9.1",
     "tslint-config-prettier": "^1.6.0",
     "typescript": "^2.6.2"
   },
   "dependencies": {
+    "@types/express": "^4.16.1",
+    "@types/express-graphql": "^0.6.2",
+    "express": "^4.16.4",
+    "express-graphql": "^0.7.1",
     "graphql": "^0.12.3",
     "jsonwebtoken": "^8.1.1",
     "uuid": "^3.2.1",
