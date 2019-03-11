@@ -1,7 +1,8 @@
-import * as zmq from "zeromq";
-import { graphql, buildSchema } from "graphql";
-import * as jwt from "jsonwebtoken";
+import * as express from "express";
+import * as graphqlHTTP from "express-graphql";
 import * as fs from "fs";
+import { buildSchema, graphql } from "graphql";
+import * as jwt from "jsonwebtoken";
 
 const schema = buildSchema(`
 type Query {
@@ -10,34 +11,26 @@ type Query {
 `);
 
 export class Service {
-  private socket: zmq.Socket;
+  private app: express.Express;
   private root: any;
   private privateKey: string;
   private publicKey: string;
 
-  constructor(gateway: string) {
+  constructor(port: string) {
     this.root = {
-      token: this.createToken.bind(this)
+      token: this.createToken.bind(this),
     };
 
     this.privateKey = fs.readFileSync("keys/private.key").toString("utf-8");
     this.publicKey = fs.readFileSync("keys/public.key").toString("utf-8");
 
-    this.socket = zmq.socket("rep");
-    this.socket.on("message", this.onRequest.bind(this));
-    this.socket.connect(gateway);
-  }
-
-  private async onRequest(q: Buffer) {
-    const operation = JSON.parse(q.toString("utf-8"));
-    const result = await graphql({
-      schema,
-      source: operation.query,
-      variableValues: operation.variables,
-      contextValue: operation.context,
-      rootValue: this.root,
-    });
-    this.socket.send(JSON.stringify(result));
+    this.app = express();
+    this.app.use("/graphql", graphqlHTTP({
+            graphiql: true,
+            rootValue: this.root,
+            schema,
+      }));
+    this.app.listen(port, () => console.log(`login service listening on port ${port}`));
   }
 
   private createToken(args: { username: string, password: string }): string {
@@ -45,20 +38,19 @@ export class Service {
       const token = jwt.sign({
       }, this.privateKey, {
         algorithm: "RS256",
+        expiresIn: "5m",
         issuer: "login",
         subject: args.username,
-        expiresIn: "5m"
       });
 
       console.log("token:", token);
       console.log("verify:", jwt.verify(token, this.publicKey, {
         algorithms: ["RS256"],
-        issuer: "login"
+        issuer: "login",
       }));
 
       return token;
-    }
-    else {
+    } else {
       return null;
     }
   }
