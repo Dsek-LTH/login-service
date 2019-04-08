@@ -5,7 +5,7 @@ import { buildSchema, graphql } from "graphql";
 import * as jwt from "jsonwebtoken";
 
 const schema = buildSchema(`
-type Query {
+type Mutation {
   token(username: String, password: String): Boolean
 }
 `);
