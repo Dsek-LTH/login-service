@@ -6,7 +6,7 @@ import * as jwt from "jsonwebtoken";
 
 const schema = buildSchema(`
 type Query {
-  token(username: String, password: String): String
+  token(username: String, password: String): Boolean
 }
 `);
 
@@ -25,15 +25,19 @@ export class Service {
     this.publicKey = fs.readFileSync("keys/public.key").toString("utf-8");
 
     this.app = express();
-    this.app.use("/graphql", graphqlHTTP({
-            graphiql: true,
-            rootValue: this.root,
-            schema,
-      }));
+    this.app.use("/graphql", (req, res) => {
+          return graphqlHTTP({
+              context: {req, res},
+              graphiql: true,
+              rootValue: this.root,
+              schema,
+          })(req, res);
+      });
     this.app.listen(port, () => console.log(`login service listening on port ${port}`));
   }
 
-  private createToken(args: { username: string, password: string }): string {
+  private createToken(args: { username: string, password: string },
+                      conn: {req: express.Request, res: express.Response}): boolean {
     if (args.username.length + args.password.length === 10) {
       const token = jwt.sign({
       }, this.privateKey, {
@@ -48,10 +52,11 @@ export class Service {
         algorithms: ["RS256"],
         issuer: "login",
       }));
+      conn.res.cookie("auth", JSON.stringify(token), {httpOnly: true, secure: true});
 
-      return token;
+      return true;
     } else {
-      return null;
+      return false;
     }
   }
 }
