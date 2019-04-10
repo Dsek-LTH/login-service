@@ -5,8 +5,11 @@ import { buildSchema, graphql } from "graphql";
 import * as jwt from "jsonwebtoken";
 
 const schema = buildSchema(`
-type Mutation {
+type Query {
   token(username: String, password: String): Boolean
+}
+type Mutation {
+  dummy: String
 }
 `);
 
@@ -52,7 +55,7 @@ export class Service {
         algorithms: ["RS256"],
         issuer: "login",
       }));
-      conn.res.cookie("auth", JSON.stringify(token), {httpOnly: true, secure: true});
+        conn.res.cookie("auth", JSON.stringify(token), {httpOnly: true, secure: process.env.NODE_ENV !== "development"});
 
       return true;
     } else {
