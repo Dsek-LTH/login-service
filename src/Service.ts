@@ -8,7 +8,6 @@ const permissions = {
     test_permission: "TEST_PERMISSION",
 };
 
-// Empty query needed because graphql complains if no queries
 const schema = buildSchema(`
 enum Permission {
     TEST_PERMISSION,
@@ -22,7 +21,7 @@ type Mutation {
   login(username: String!, password: String!): User
 }
 type Query {
-  dummy: String
+  publicKey: String!
 }
 `);
 
@@ -40,6 +39,7 @@ export class Service {
   constructor(port: string) {
     this.root = {
       login: this.createToken.bind(this),
+      publicKey: () => this.publicKey,
     };
 
     this.privateKey = fs.readFileSync("keys/private.key").toString("utf-8");
