@@ -4,14 +4,32 @@ import * as fs from "fs";
 import { buildSchema, graphql } from "graphql";
 import * as jwt from "jsonwebtoken";
 
+const permissions = {
+    test_permission: "TEST_PERMISSION",
+};
+
+// Empty query needed because graphql complains if no queries
 const schema = buildSchema(`
-type Query {
-  token(username: String, password: String): Boolean
+enum Permission {
+    TEST_PERMISSION,
+    OTHER_PERMISSION
+}
+type User {
+    userid: String!,
+    permissions: [Permission!]!
 }
 type Mutation {
+  login(username: String!, password: String!): User
+}
+type Query {
   dummy: String
 }
 `);
+
+interface IUser {
+    userid: string;
+    permissions: string[];
+}
 
 export class Service {
   private app: express.Express;
@@ -21,7 +39,7 @@ export class Service {
 
   constructor(port: string) {
     this.root = {
-      token: this.createToken.bind(this),
+      login: this.createToken.bind(this),
     };
 
     this.privateKey = fs.readFileSync("keys/private.key").toString("utf-8");
@@ -39,15 +57,26 @@ export class Service {
     this.app.listen(port, () => console.log(`login service listening on port ${port}`));
   }
 
+  private getUser(username: string, password: string): IUser {
+        console.log("getuser");
+        // temporary solution for testing
+        if (username.length + password.length === 10) {
+            return {userid: username, permissions: [permissions.test_permission]};
+        } else {
+            return null;
+        }
+    }
+
   private createToken(args: { username: string, password: string },
-                      conn: {req: express.Request, res: express.Response}): boolean {
-    if (args.username.length + args.password.length === 10) {
+                      conn: {req: express.Request, res: express.Response}): IUser {
+    const user = this.getUser(args.username, args.password);
+    if (user) {
       const token = jwt.sign({
       }, this.privateKey, {
         algorithm: "RS256",
         expiresIn: "5m",
         issuer: "login",
-        subject: args.username,
+        subject: JSON.stringify(user),
       });
 
       console.log("token:", token);
@@ -55,11 +84,11 @@ export class Service {
         algorithms: ["RS256"],
         issuer: "login",
       }));
-        conn.res.cookie("auth", JSON.stringify(token), {httpOnly: true, secure: process.env.NODE_ENV !== "development"});
+      conn.res.cookie("auth", JSON.stringify(token), {httpOnly: true, secure: process.env.NODE_ENV !== "development"});
 
-      return true;
+      return user;
     } else {
-      return false;
+      return null;
     }
   }
 }
