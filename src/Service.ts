@@ -1,14 +1,12 @@
-import * as express from "express";
-import * as graphqlHTTP from "express-graphql";
+import { ApolloServer, gql } from "apollo-server";
 import * as fs from "fs";
-import { buildSchema, graphql } from "graphql";
 import * as jwt from "jsonwebtoken";
 
 const permissions = {
     test_permission: "TEST_PERMISSION",
 };
 
-const schema = buildSchema(`
+const typeDefs = gql`
 enum Permission {
     TEST_PERMISSION,
     OTHER_PERMISSION
@@ -23,7 +21,7 @@ type Mutation {
 type Query {
   publicKey: String!
 }
-`);
+`;
 
 interface IUser {
     userid: string;
@@ -31,7 +29,7 @@ interface IUser {
 }
 
 export class Service {
-  private app: express.Express;
+  private app: ApolloServer;
   private root: any;
   private privateKey: string;
   private publicKey: string;
@@ -45,14 +43,10 @@ export class Service {
     this.privateKey = fs.readFileSync("keys/private.key").toString("utf-8");
     this.publicKey = fs.readFileSync("keys/public.key").toString("utf-8");
 
-    this.app = express();
-    this.app.use("/graphql", (req, res) => {
-          return graphqlHTTP({
-              context: {req, res},
-              graphiql: true,
-              rootValue: this.root,
-              schema,
-          })(req, res);
+      this.app = new ApolloServer({
+          context: ({req, res}) => ({req, res}),
+          typeDefs,
+          rootValue: this.root,
       });
     this.app.listen(port, () => console.log(`login service listening on port ${port}`));
   }
@@ -68,7 +62,7 @@ export class Service {
     }
 
   private createToken(args: { username: string, password: string },
-                      conn: {req: express.Request, res: express.Response}): IUser {
+                      conn: any): IUser {
     const user = this.getUser(args.username, args.password);
     if (user) {
       const token = jwt.sign({

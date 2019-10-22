@@ -6,6 +6,7 @@
     "module": "commonjs",
     "target": "es6",
     "experimentalDecorators": true,
+    "esModuleInterop": true,
     "typeRoots": [
       "node_modules/@types"
     ],
