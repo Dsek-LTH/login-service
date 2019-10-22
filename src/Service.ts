@@ -1,3 +1,4 @@
+import { buildFederatedSchema } from "@apollo/federation";
 import { ApolloServer, gql } from "apollo-server";
 import * as fs from "fs";
 import * as jwt from "jsonwebtoken";
@@ -11,7 +12,7 @@ enum Permission {
     TEST_PERMISSION,
     OTHER_PERMISSION
 }
-type User {
+type User @key(fields: "userid") {
     userid: String!,
     permissions: [Permission!]!
 }
@@ -30,14 +31,18 @@ interface IUser {
 
 export class Service {
   private app: ApolloServer;
-  private root: any;
+  private resolvers: any;
   private privateKey: string;
   private publicKey: string;
 
   constructor(port: string) {
-    this.root = {
-      login: this.createToken.bind(this),
-      publicKey: () => this.publicKey,
+    this.resolvers = {
+      Mutation: {
+        login: this.createToken.bind(this),
+      },
+      Query: {
+        publicKey: () => this.publicKey,
+      }
     };
 
     this.privateKey = fs.readFileSync("keys/private.key").toString("utf-8");
@@ -45,8 +50,7 @@ export class Service {
 
       this.app = new ApolloServer({
           context: ({req, res}) => ({req, res}),
-          typeDefs,
-          rootValue: this.root,
+          schema: buildFederatedSchema({typeDefs, resolvers: this.resolvers}),
       });
     this.app.listen(port, () => console.log(`login service listening on port ${port}`));
   }
@@ -61,7 +65,7 @@ export class Service {
         }
     }
 
-  private createToken(args: { username: string, password: string },
+  private createToken(root: any, args: { username: string, password: string },
                       conn: any): IUser {
     const user = this.getUser(args.username, args.password);
     if (user) {
